@@ -5,7 +5,13 @@
 
 -- get time us
 --
+last_time = time;
+if (last_time == nil) then
+     last_time = 0;
+end
+     
 time = tmr.now();
+tmr.wdclr();
 
 -- start every 10 sec
 --
@@ -51,6 +57,8 @@ conn = net.createConnection(net.TCP, 0);
 --
 conn:on( "receive", function(conn, payload) 
 
+    time = tmr.now() - time;
+    
     s,e = string.find(payload, "\n");
     a = string.sub(payload, 0, e);
     print(a);
@@ -63,10 +71,10 @@ conn:on( "connection", function(conn, payload)
 
     print("conected.");
     vcc = string.format("%f", node.readvdd33());
-    time = string.format("%f",tmr.now() - time);
-    min = string.format("%f", tmr.time());
+    t = string.format("%f", last_time);
+    sec = string.format("%d", (tmr.time() /60));
     
-    t = "time=" ..time.. "&vcc=" ..vcc.. "&min=" ..min;
+    t = "time=" ..t.. "&vcc=" ..vcc.. "&sec=" ..sec;
     
     connection = true;
 
