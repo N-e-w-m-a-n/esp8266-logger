@@ -1,3 +1,38 @@
+----------------------------------------------------
+-- This will be run at very first after ESP start --
+----------------------------------------------------
+
+
+-- get time us
+--
+time = tmr.now();
+
+-- start every 10 sec
+--
+tmr.alarm(1,10000, 0, function() 
+     
+     dofile("test.lua"); 
+end );
+
+-- so, some wifi init
+-- 
+if (wifi.sta.getip() == nil) then
+     wifi.setmode(wifi.STATION);
+     wifi.sta.config("EcoHome","a1b2c3d4");
+
+     wifi.sta.connect();
+end
+
+-- get some IP from AP
+--
+while (wifi.sta.getip() == nil) do
+    
+     print(" Wait for IP --> "..wifi.sta.status());
+     tmr.delay(100000); 
+end
+   
+print("New IP address is "..wifi.sta.getip()); 
+
 -------------------------------------------
 -- Get some data,                        --
 -- send it to the Internet Server,       --
@@ -7,15 +42,6 @@
 -- get data ready
 --
 connection = false;
-time = 0;
---if (file.open("time.dat", "r")) then
---
---    time = file.read();
---    print("read " ..time.. " from file");
---    
---    file.close();
---end;
-
 
 -- create new connection
 --
@@ -28,6 +54,7 @@ conn:on( "receive", function(conn, payload)
     s,e = string.find(payload, "\n");
     a = string.sub(payload, 0, e);
     print(a);
+    
 end );
   
 -- once connected, request page and send parameters to the server
@@ -35,19 +62,15 @@ end );
 conn:on( "connection", function(conn, payload) 
 
     print("conected.");
+    vcc = string.format("%f", node.readvdd33());
+    time = string.format("%f",tmr.now() - time);
+    min = string.format("%f", tmr.time());
     
-    t = "time=" ..time.. "&mem=" ..node.heap();
+    t = "time=" ..time.. "&vcc=" ..vcc.. "&min=" ..min;
     
     connection = true;
 
---    conn:send("GET /sett.php?time="..time
---            .." HTTP/1.0\r\n"
---            .."Host: my.bamo.cz\r\n"
---            .."Connection: close\r\n"
---            .."Accept: */*\r\n"
---            .."\r\n");
-
-    conn:send("POST /onep:v1/stack/alias HTTP/1.1\r\n"
+    conn:send("POST /api:v1/stack/alias HTTP/1.1\r\n"
             .."Host: m2.exosite.com\r\n"
             .."X-Exosite-CIK: b367a49e96d95fc2c598b41570669fc9033f1865\r\n"
             .."Content-Type: application/x-www-form-urlencoded; charset=utf-8\r\n"
@@ -65,26 +88,12 @@ end );
 conn:on("disconnection", function(conn, payload) 
 
     connection = false;
-
---    if (file.open("time.dat", "w+")) then
---    
---        file.write(tmr.now() / 1000);
---        file.close();
---    end;
     
     print("close conection...");
     
-    -- after a sec do sleep
-    --
- --    tmr.alarm(1,5000, 0, function() 
- --         
- --         print("sleep... ."); 
- --         node.dsleep(3000000); 
- --    end );
 end );
 
 -- do connect and send data
 --
 print("connect");
 conn:connect(80,"m2.exosite.com");
---conn:connect(80,"my.bamo.cz");
