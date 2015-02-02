@@ -2,8 +2,7 @@
 -- This will be run at very first after ESP start --
 ----------------------------------------------------
 
-
--- get time us
+-- get time us and clear watchdog
 --
 last_time = time;
 if (last_time == nil) then
@@ -12,6 +11,14 @@ end
      
 time = tmr.now();
 tmr.wdclr();
+
+-- set running time
+--
+if (run_time == nil) then
+     run_time = 0;
+else
+     run_time = run_time + 10;
+end
 
 -- start every 10 sec
 --
@@ -37,7 +44,7 @@ while (wifi.sta.getip() == nil) do
      tmr.delay(100000); 
 end
    
-print("New IP address is "..wifi.sta.getip()); 
+print("IP address is "..wifi.sta.getip()); 
 
 -------------------------------------------
 -- Get some data,                        --
@@ -60,7 +67,7 @@ conn:on( "receive", function(conn, payload)
     time = tmr.now() - time;
     
     s,e = string.find(payload, "\n");
-    a = string.sub(payload, 0, e);
+    a = string.sub(payload, 0, e -1);
     print(a);
     
 end );
@@ -72,7 +79,7 @@ conn:on( "connection", function(conn, payload)
     print("conected.");
     vcc = string.format("%f", node.readvdd33());
     t = string.format("%f", last_time);
-    sec = string.format("%d", (tmr.time() /60));
+    sec = string.format("%d", run_time);
     
     t = "time=" ..t.. "&vcc=" ..vcc.. "&sec=" ..sec;
     
@@ -97,7 +104,7 @@ conn:on("disconnection", function(conn, payload)
 
     connection = false;
     
-    print("close conection...");
+    print("close conection...\n");
     
 end );
 
